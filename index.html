@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Passo a Passo - MMI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #121212;
+      --bg-surface:  #1c1c1c;
+      --bg-elevated: #232323;
+      --border:      #333333;
+      --text:        #e8e8e8;
+      --text-muted:  #999999;
+      --accent:      #ff9500;
+      --accent-dark: #cc7700;
+      --accent-bg:   #2a1f0f;
+      --code-bg:     #1a1a1a;
+      --code-fg:     #d4d4d4;
+      --green:       #4caf50;
+      --green-bg:    #14241a;
+      --red:         #e85b5b;
+      --red-bg:      #2a1414;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      z-index: 200;
+    }
+    .menu-btn {
+      width: 36px; height: 36px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .menu-btn:active { background: var(--bg-elevated); }
+    .topbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .topbar-title span { color: var(--accent); }
+
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 250;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px;
+      max-width: 82vw;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      z-index: 300;
+      transform: translateX(-100%);
+      transition: transform .25s ease;
+      overflow-y: auto;
+      padding: 20px 0 40px;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 0 20px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .sidebar-header strong { color: var(--accent); font-size: 15px; }
+    .sidebar-header p { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+    .nav-section {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--text-muted);
+      padding: 14px 20px 6px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 8px 20px;
+      font-size: 13.5px;
+      color: var(--text);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:active, .sidebar a.active {
+      background: var(--accent-bg);
+      border-left-color: var(--accent);
+      color: var(--accent);
+    }
+
+    main {
+      margin-top: 56px;
+      padding: 28px 20px 80px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .etapa-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      letter-spacing: .4px;
+    }
+    .intro { color: var(--text-muted); margin-bottom: 28px; font-size: 14.5px; }
+
+    h2 {
+      font-size: 17px;
+      color: var(--text);
+      margin: 32px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 15px; margin: 20px 0 8px; color: var(--text); }
+
+    p { margin-bottom: 12px; }
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 13px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--accent);
+    }
+
+    ul.bullets { padding-left: 18px; margin: 10px 0 16px; }
+    ul.bullets li { margin-bottom: 6px; color: var(--text); }
+    ul.bullets li strong { color: var(--text); }
+
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 18px 0;
+      font-size: 13.5px;
+      line-height: 1.6;
+      border: 1px solid var(--border);
+    }
+    .callout strong { display: block; margin-bottom: 3px; font-size: 13px; }
+    .callout.tip   { background: var(--green-bg); border-color: var(--green); }
+    .callout.tip strong { color: var(--green); }
+    .callout.warn  { background: var(--red-bg); border-color: var(--red); }
+    .callout.warn strong { color: var(--red); }
+    .callout.note  { background: var(--accent-bg); border-color: var(--accent); }
+    .callout.note strong { color: var(--accent); }
+
+    .code-block {
+      margin: 16px 0 22px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .code-block .lang-tag {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      padding: 7px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+    .code-block pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    .kw { color: #c586c0; }
+    .fn { color: #dcdcaa; }
+    .st { color: #ce9178; }
+    .cm { color: #6a9955; font-style: italic; }
+    .nb { color: #4ec9b0; }
+    .num { color: #b5cea8; }
+
+    .footer-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .nav-btn.proximo {
+      background: var(--accent);
+      color: #1a1a1a;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-btn.disabled {
+      opacity: .4;
+      pointer-events: none;
+    }
+
+    .progress-track {
+      position: fixed;
+      top: 56px; left: 0; right: 0;
+      height: 3px;
+      background: var(--bg-elevated);
+      z-index: 200;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width .1s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+  <div class="topbar-title">Passo a Passo Interativo - <span>MMI</span></div>
+</div>
+<div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <strong>Passo a Passo - MMI</strong>
+    <p>Curso Técnico em Desenvolvimento de Sistemas</p>
+  </div>
+
+  <div class="nav-section">API Pública</div>
+  <a href="#etapa-1" class="active">1. Consumo da API Open-Meteo</a>
+
+  <div class="nav-section">Banco de Dados e Backend</div>
+  <a href="#etapa-2">2. Banco de Dados (MySQL)</a>
+  <a href="#etapa-3">3. Backend (Python e Flask)</a>
+
+  <div class="nav-section">Cadastro e Login</div>
+  <a href="#etapa-4">4. Rotas de Backend</a>
+  <a href="#etapa-5">5. HTML</a>
+  <a href="#etapa-6">6. JavaScript</a>
+
+  <div class="nav-section">Editar e Excluir Dados</div>
+  <a href="#etapa-7">7. Rotas de Backend</a>
+  <a href="#etapa-8">8. HTML</a>
+  <a href="#etapa-9">9. JavaScript</a>
+</nav>
+
+<main>
+  <section id="etapa-1">
+
+    <span class="etapa-tag">ETAPA 1 DE 9</span>
+    <h1>Consumo da API Pública Open-Meteo</h1>
+    <p class="intro">O projeto começa pelo dashboard, que consome dados meteorológicos da API (Application Programming Interface) pública Open-Meteo usando apenas HTML e JavaScript. Nesta etapa ainda não existe banco de dados nem backend, toda a comunicação acontece diretamente entre o navegador da web e o servidor da Open-Meteo.</p>
+
+    <h2>Passo a Passo</h2>
+    <p>Primeiro vamos criar a pasta do projeto, depois a tela do dashboard com os espaços reservados para os gráficos, e por fim o JavaScript que busca os dados na API pública e desenha os gráficos com a biblioteca ECharts.</p>
+    <h3>Passo 1 - Crie a pasta do projeto</h3>
+    <p>Abra o VS Code e crie uma nova pasta vazia chamada de <code>Monitoramento Meteorológico Integrado</code>. Dentro dela, crie duas subpastas, uma chamada de <code>templates</code>, que vai guardar os arquivos de HTML, e outra chamada de <code>static</code>, que vai guardar os arquivos de JavaScript.</p>
+    <div class="callout note">
+      <strong>Abrindo a pasta no VS Code</strong>
+      No VS Code, clique em <code>Arquivo → Abrir Pasta</code> e selecione a pasta do projeto. Isso garante que o terminal integrado do editor de código já abra na pasta correta.
+    </div>
+    <h3>Passo 2 - Crie a tela do dashboard</h3>
+    <p>Dentro da pasta <code>templates</code>, crie um arquivo chamado de <code>dashboard.html</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">html — dashboard.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>&lt;!DOCTYPE html&gt;
+<span class="kw">&lt;html</span> lang=<span class="st">&quot;pt-BR&quot;</span>&gt;
+<span class="kw">&lt;head</span>&gt;
+    <span class="kw">&lt;meta</span> charset=<span class="st">&quot;UTF-8&quot;</span>&gt;
+    <span class="kw">&lt;meta</span> name=<span class="st">&quot;viewport&quot;</span> content=<span class="st">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;
+    <span class="kw">&lt;title</span>&gt;Dashboard - MMI<span class="kw">&lt;/title</span>&gt;
+    <span class="kw">&lt;link</span> href=<span class="st">&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css&quot;</span> rel=<span class="st">&quot;stylesheet&quot;</span>&gt;
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+<span class="kw">&lt;/head</span>&gt;
+
+<span class="kw">&lt;body</span> class=<span class="st">&quot;bg-light&quot;</span>&gt;
+    <span class="kw">&lt;div</span> class=<span class="st">&quot;container py-5&quot;</span>&gt;
+
+        <span class="kw">&lt;h1</span> class=<span class="st">&quot;h3 text-center mb-3&quot;</span>&gt;Monitoramento Meteorológico Integrado - MMI<span class="kw">&lt;/h1</span>&gt;
+
+        <span class="cm">&lt;!-- Seleção do local de interesse --&gt;</span>
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;col-12 mb-4&quot;</span>&gt;
+            <span class="kw">&lt;label</span> class=<span class="st">&quot;form-label&quot;</span> for=<span class="st">&quot;cidade&quot;</span>&gt;Cidade<span class="kw">&lt;/label</span>&gt;
+            <span class="kw">&lt;select</span> id=<span class="st">&quot;cidade&quot;</span> class=<span class="st">&quot;form-select&quot;</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;&quot;</span>&gt;Selecione a cidade...<span class="kw">&lt;/option</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;botucatu&quot;</span>&gt;Botucatu<span class="kw">&lt;/option</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;pardinho&quot;</span>&gt;Pardinho<span class="kw">&lt;/option</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;sao-manuel&quot;</span>&gt;São Manuel<span class="kw">&lt;/option</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;itatinga&quot;</span>&gt;Itatinga<span class="kw">&lt;/option</span>&gt;
+                <span class="kw">&lt;option</span> value=<span class="st">&quot;avare&quot;</span>&gt;Avaré<span class="kw">&lt;/option</span>&gt;
+            <span class="kw">&lt;/select</span>&gt;
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;mt-2&quot;</span>&gt;
+                <span class="kw">&lt;span</span> class=<span class="st">&quot;text-muted&quot;</span>&gt;Coordenadas Geográficas:<span class="kw">&lt;/span</span>&gt;
+                <span class="kw">&lt;span</span> id=<span class="st">&quot;coordenadas&quot;</span> class=<span class="st">&quot;fw-bold&quot;</span>&gt;...<span class="kw">&lt;/span</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;
+
+        <span class="cm">&lt;!-- Data e hora da coleta dos dados --&gt;</span>
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;col-12 mb-4&quot;</span>&gt;
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow text-center&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+                    <span class="kw">&lt;span</span> class=<span class="st">&quot;text-muted&quot;</span>&gt;Última Coleta:<span class="kw">&lt;/span</span>&gt;
+                    <span class="kw">&lt;br</span>&gt;
+                    <span class="kw">&lt;span</span> id=<span class="st">&quot;hora-coleta&quot;</span> class=<span class="st">&quot;fw-bold&quot;</span>&gt;—<span class="kw">&lt;/span</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;
+        
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;row g-4&quot;</span>&gt;
+
+            <span class="cm">&lt;!-- Temperatura do Ar --&gt;</span>
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        Temperatura do Ar
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;grafico-temperatura&quot;</span> style=<span class="st">&quot;width: 100%; height: 500px;&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+
+            <span class="cm">&lt;!-- Umidade do Ar --&gt;</span>
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        Umidade do Ar
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;grafico-umidade&quot;</span> style=<span class="st">&quot;width: 100%; height: 500px;&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+
+            <span class="cm">&lt;!-- Temperatura do Ar Diária --&gt;</span>
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-12&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        Temperatura do Ar Diária
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;grafico-temperatura-diaria&quot;</span> style=<span class="st">&quot;width: 100%; height: 500px;&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+
+        <span class="kw">&lt;/div</span>&gt;
+    <span class="kw">&lt;/div</span>&gt;
+
+    <span class="cm">&lt;!-- JS que irá consumir os dados meteorológicos via API --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/dashboard.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+<span class="kw">&lt;/body</span>&gt;
+<span class="kw">&lt;/html</span>&gt;</pre>
+    </div>
+    <div class="callout note">
+      <strong>Sobre a biblioteca ECharts</strong>
+      A tag <code>&lt;script&gt;</code> dentro do <code>&lt;head&gt;</code> carrega a biblioteca de gráficos ECharts a partir de uma CDN (Content Delivery Network). Cada <code>&lt;div&gt;</code> com o id iniciado por <code>grafico-</code> é um espaço vazio reservado, onde o JavaScript vai desenhar um gráfico.
+    </div>
+    <h3>Passo 3 - Crie o JavaScript do dashboard</h3>
+    <p>Dentro da pasta <code>static</code>, crie um arquivo chamado de <code>dashboard.js</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — dashboard.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Guarda as leituras que chegarem da API de Meteorologia.</span>
+<span class="kw">const</span> leituras = {};
+
+<span class="cm">// Coordenadas do local de interesse.</span>
+<span class="kw">const</span> cidades = {
+    <span class="st">&quot;botucatu&quot;</span>: { latitude: -<span class="num">22.48</span>, longitude: -<span class="num">48.45</span> },
+    <span class="st">&quot;pardinho&quot;</span>: { latitude: -<span class="num">23.08</span>, longitude: -<span class="num">48.37</span> },
+    <span class="st">&quot;sao-manuel&quot;</span>: { latitude: -<span class="num">22.73</span>, longitude: -<span class="num">48.57</span> },
+    <span class="st">&quot;itatinga&quot;</span>: { latitude: -<span class="num">23.10</span>, longitude: -<span class="num">48.61</span> },
+    <span class="st">&quot;avare&quot;</span>: { latitude: -<span class="num">23.10</span>, longitude: -<span class="num">48.93</span> }
+}
+
+<span class="cm">// Define o objeto de HTML que é o seletor de cidade.</span>
+<span class="kw">const</span> seletorCidade = document.getElementById(<span class="st">&quot;cidade&quot;</span>); 
+
+<span class="cm">// Event Listener que aguarde uma mudança no seletor de cidade.</span>
+seletorCidade.addEventListener(<span class="st">&quot;change&quot;</span>, <span class="kw">function</span>(){
+
+    <span class="cm">// Busca as coordenadas da cidade selecionada.</span>
+    <span class="kw">let</span> local = cidades[seletorCidade.value];
+
+    <span class="cm">// Carrega as coordenadas geográficas em variáveis para manipulação.</span>
+    <span class="kw">let</span> latitude = local.latitude;
+    <span class="kw">let</span> longitude = local.longitude;
+
+    <span class="cm">// Mostra as coordenadas geográficas.</span>
+    document.getElementById(<span class="st">&quot;coordenadas&quot;</span>).textContent =
+    <span class="st">&quot;Latitude: &quot;</span> + latitude + <span class="st">&quot; e Longitude: &quot;</span> + longitude;
+
+    
+    <span class="cm">// Função que consulta os dados meteorológicos do Open-Meteo.</span>
+    <span class="kw">function</span> lerDados() {
+
+        <span class="kw">const</span> url = <span class="st">&quot;https://api.open-meteo.com/v1/forecast?latitude=&quot;</span> + latitude +
+                    <span class="st">&quot;&amp;longitude=&quot;</span> + longitude + <span class="st">&quot;&amp;current=temperature_2m,relative_humidity_2m&quot;</span> +
+                    <span class="st">&quot;&amp;minutely_15=temperature_2m&quot;</span> +
+                    <span class="st">&quot;&amp;timezone=America/Sao_Paulo&quot;</span>;
+
+        <span class="kw">return</span> fetch(url);
+    }
+
+    <span class="cm">// Desenha um gráfico da temperatura do ar.</span>
+    <span class="kw">function</span> exibirTemperatura (valor) {
+
+        <span class="kw">const</span> grafico = echarts.init(document.getElementById(<span class="st">&quot;grafico-temperatura&quot;</span>));
+
+        grafico.setOption({
+            series: [
+                {
+                    type: <span class="st">&quot;gauge&quot;</span>,
+                    min: <span class="num">0</span>,
+                    max: <span class="num">50</span>,
+                    detail: { formatter: <span class="st">&quot;{value} °C&quot;</span> },
+                    data: [{ value: valor }]
+                }
+            ]
+        });
+    }
+
+    <span class="cm">// Desenha um gráfico da umidade relativa.</span>
+    <span class="kw">function</span> exibirUmidade (valor) {
+
+        <span class="kw">const</span> grafico = echarts.init(document.getElementById(<span class="st">&quot;grafico-umidade&quot;</span>));
+
+        grafico.setOption({
+            series: [
+                {
+                    type: <span class="st">&quot;gauge&quot;</span>,
+                    min: <span class="num">0</span>,
+                    max: <span class="num">100</span>,
+                    detail: { formatter: <span class="st">&quot;{value} %&quot;</span> },
+                    data: [{ value: valor }]
+                }
+            ]
+        });
+    }
+
+    <span class="cm">// Desenha um gráfico da temperatura do ar ao longo do dia.</span>
+    <span class="kw">function</span> exibirTemperaturaDiaria (horarios, valores) {
+
+        <span class="kw">const</span> grafico = echarts.init(document.getElementById(<span class="st">&quot;grafico-temperatura-diaria&quot;</span>));
+
+        grafico.setOption({
+
+            <span class="cm">// Exibe informações ao passar o mouse no gráfico.</span>
+            tooltip: { trigger: <span class="st">&quot;axis&quot;</span> },
+
+            <span class="cm">// Informações do eixo horizontal (horários).</span>
+            xAxis: {
+                type: <span class="st">&quot;category&quot;</span>,
+                data: horarios,
+                boundaryGap: <span class="kw">false</span>
+            },
+
+            <span class="cm">// Informações do eixo vertical (temperaturas do ar).</span>
+            yAxis: {
+                type: <span class="st">&quot;value&quot;</span>,
+                name: <span class="st">&quot;Temperatura (°C)&quot;</span>
+            },
+
+            <span class="cm">// Configura o zoom nos dados.</span>
+            dataZoom: [
+                { type: <span class="st">&quot;inside&quot;</span> },
+                {}
+            ],
+
+            <span class="cm">// Exibe os dados de temperatura do ar ao longo do dia.</span>
+            series: [{
+                type: <span class="st">&quot;line&quot;</span>,
+                data: valores,
+                symbol: <span class="st">&quot;none&quot;</span>,
+                areaStyle: {}
+            }]
+        });
+    }
+
+    <span class="cm">// Vincula os dados meteorológicos com os gráficos.</span>
+    lerDados()
+        .then(<span class="kw">function</span> (resposta) {
+
+            <span class="cm">// Lê os dados meteorológicos e salva em um objeto.</span>
+            <span class="kw">return</span> resposta.json();
+        })
+        .then(<span class="kw">function</span> (dados) {
+
+            <span class="cm">// Guarda os dados meteorológicos atuais.</span>
+            leituras.temperatura = dados.current.temperature_2m;
+            leituras.umidade = dados.current.relative_humidity_2m;
+
+            <span class="cm">// Exibe a hora da coleta dos dados.</span>
+            <span class="kw">let</span> horaAtual = dados.current.time;
+            document.getElementById(<span class="st">&quot;hora-coleta&quot;</span>).textContent = horaAtual;
+
+            <span class="cm">// Alimenta os gráficos.</span>
+            exibirTemperatura(leituras.temperatura);
+            exibirUmidade(leituras.umidade);
+
+            <span class="cm">// Vetores para criar o gráfico de temperatura do ar diária.</span>
+            <span class="kw">let</span> horarios = [];
+            <span class="kw">let</span> valores = [];
+
+            <span class="cm">// Loop que percorre os dados e preenche os vetores.</span>
+            <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; dados.minutely_15.time.length; i++) {
+
+                <span class="cm">// Filtra os dados para exibir apenas até a hora atual.</span>
+                <span class="kw">if</span> (dados.minutely_15.time[i] &lt;= horaAtual) {
+
+                    horarios.push(dados.minutely_15.time[i]);
+                    valores.push(dados.minutely_15.temperature_2m[i]);
+                }
+
+            }
+
+            <span class="cm">// Exibe o gráfico de temperatura do ar diária.</span>
+            exibirTemperaturaDiaria(horarios, valores);
+        });
+});</pre>
+    </div>
+    <h3>Passo 4 - Compreender o consumo da API pública</h3>
+    <ul class="bullets">
+      <li><strong>cidades</strong> é um objeto que relaciona o valor de cada opção do seletor de cidade com a latitude e a longitude daquela cidade.</li>
+      <li><strong>addEventListener("change", ...)</strong> executa todo o código sempre que o usuário escolhe uma cidade diferente no seletor.</li>
+      <li><strong>lerDados()</strong> monta a URL da Open-Meteo com as coordenadas da cidade e os parâmetros desejados: <code>current</code> para a temperatura do ar e a umidade relativa atuais, <code>minutely_15</code> para a temperatura do ar a cada 15 minutos, e <code>timezone</code> para receber os horários no fuso horário de Brasília.</li>
+      <li><strong>fetch(url)</strong> faz a requisição para a API pública e devolve uma promessa (Promise). O primeiro <code>.then()</code> converte a resposta para JSON (JavaScript Object Notation) e o segundo <code>.then()</code> recebe os dados já convertidos.</li>
+      <li><strong>echarts.init()</strong> associa um gráfico a uma <code>&lt;div&gt;</code> do HTML, e <code>setOption()</code> define o tipo do gráfico (<code>gauge</code> para os mostradores e <code>line</code> para a linha diária) e os dados exibidos.</li>
+      <li>A comparação <code>dados.minutely_15.time[i] &lt;= horaAtual</code> mantém no gráfico diário apenas os horários que já aconteceram, descartando a previsão para o restante do dia.</li>
+    </ul>
+    <h3>Passo 5 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── static/
+│   └── dashboard.js
+│
+└── templates/
+    └── dashboard.html</pre>
+    </div>
+    <h3>Passo 6 - Teste o consumo da API pública</h3>
+    <p>Clique com o botão direito do mouse no arquivo <code>dashboard.html</code> e escolha a opção <code>Open with Live Server</code>. Com a página aberta no navegador da web, selecione uma cidade.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      Ao selecionar uma cidade, as coordenadas geográficas e a hora da última coleta devem aparecer na tela, os dois mostradores devem exibir a temperatura do ar e a umidade relativa atuais, e o gráfico diário deve mostrar a temperatura do ar desde a meia-noite até o horário atual.
+    </div>
+
+  </section>
+
+  <section id="etapa-2">
+
+    <span class="etapa-tag">ETAPA 2 DE 9</span>
+    <h1>Construção do Banco de Dados</h1>
+    <p class="intro">Com o dashboard funcionando, o próximo objetivo é permitir que cada usuário tenha uma conta no sistema computacional. Para isso, os dados dos usuários precisam ser guardados em um banco de dados MySQL.</p>
+
+    <div class="callout note">
+      <strong>Etapa de copiar e colar</strong>
+      O foco deste projeto é o frontend. Os códigos de banco de dados e de backend desta etapa são fornecidos prontos, basta copiá-los e colá-los nos arquivos indicados.
+    </div>
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Crie o arquivo do banco de dados</h3>
+    <p>Na raiz da pasta do projeto, crie um arquivo chamado de <code>schema.sql</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">sql — schema.sql<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">-- Cria e define o uso do banco de dados.</span>
+<span class="kw">DROP</span> <span class="kw">DATABASE</span> <span class="kw">IF</span> <span class="kw">EXISTS</span> meteorologia_db;
+<span class="kw">CREATE</span> <span class="kw">DATABASE</span> meteorologia_db;
+<span class="kw">USE</span> meteorologia_db;
+
+<span class="cm">-- Cria a tabela para armazenar dados dos usuários.</span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> usuario (
+    id <span class="kw">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">AUTO_INCREMENT</span>,
+    nome <span class="kw">VARCHAR</span>(<span class="num">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,
+    cpf <span class="kw">VARCHAR</span>(<span class="num">14</span>) <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">UNIQUE</span>,
+    email <span class="kw">VARCHAR</span>(<span class="num">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">UNIQUE</span>,
+    senha <span class="kw">VARCHAR</span>(<span class="num">255</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,
+    telefone <span class="kw">VARCHAR</span>(<span class="num">20</span>),
+    data_nascimento <span class="kw">DATE</span>,
+    criado_em <span class="kw">DATETIME</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="kw">CURRENT_TIMESTAMP</span>
+);</pre>
+    </div>
+    <h3>Passo 2 - Execute o arquivo no MySQL Workbench</h3>
+    <p>Abra o MySQL Workbench, conecte-se ao servidor local, cole o conteúdo do <code>schema.sql</code> em uma nova aba de consulta e clique no ícone do raio para executar todo o conteúdo.</p>
+    <div class="callout warn">
+      <strong>Atenção ao DROP DATABASE</strong>
+      A primeira linha apaga o banco de dados <code>meteorologia_db</code> caso ele já exista. Se você executar esse arquivo novamente no futuro, todos os usuários cadastrados serão perdidos.
+    </div>
+    <h3>Passo 3 - Compreender a tabela criada</h3>
+    <ul class="bullets">
+      <li><strong>AUTO_INCREMENT</strong> faz o MySQL gerar automaticamente o <code>id</code> de cada novo usuário.</li>
+      <li><strong>UNIQUE</strong> nas colunas <code>cpf</code> e <code>email</code> impede que dois usuários sejam cadastrados com o mesmo CPF ou com o mesmo e-mail.</li>
+      <li><strong>senha VARCHAR(255)</strong> é maior do que uma senha comum porque a coluna vai guardar a senha criptografada (hash), que é um texto bem mais longo.</li>
+      <li><strong>criado_em</strong> recebe automaticamente a data e a hora do cadastro, graças ao <code>DEFAULT CURRENT_TIMESTAMP</code>.</li>
+    </ul>
+    <h3>Passo 4 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+│
+├── static/
+│   └── dashboard.js
+│
+└── templates/
+    └── dashboard.html</pre>
+    </div>
+    <h3>Passo 5 - Teste o banco de dados</h3>
+    <p>No MySQL Workbench, execute a consulta <code>SELECT * FROM meteorologia_db.usuario;</code>.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      A consulta deve exibir as colunas da tabela <code>usuario</code>, ainda sem nenhuma linha de dados.
+    </div>
+
+  </section>
+
+  <section id="etapa-3">
+
+    <span class="etapa-tag">ETAPA 3 DE 9</span>
+    <h1>Construção do Backend</h1>
+    <p class="intro">O navegador da web não pode se conectar diretamente ao banco de dados. Quem faz essa ponte é o backend, construído em linguagem de programação Python com o Flask. Nesta etapa vamos preparar o backend e a conexão com o banco de dados, ainda sem nenhuma rota.</p>
+
+    <div class="callout note">
+      <strong>Etapa de copiar e colar</strong>
+      O foco deste projeto é o frontend. Os códigos de banco de dados e de backend desta etapa são fornecidos prontos, basta copiá-los e colá-los nos arquivos indicados.
+    </div>
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Instale as bibliotecas necessárias</h3>
+    <p>Com o terminal do VS Code aberto na pasta do projeto, execute o comando abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">bash<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>pip install flask flask-cors flask-jwt-extended python-dotenv mysql-connector-python</pre>
+    </div>
+    <h3>Passo 2 - Crie o arquivo de variáveis de ambiente</h3>
+    <p>Na raiz da pasta do projeto, crie um arquivo chamado de <code>.env</code> com o conteúdo abaixo. Se a senha do seu MySQL não for <code>root</code>, altere o valor de <code>DB_PASSWORD</code>:</p>
+    <div class="code-block">
+      <div class="lang-tag">.env<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=meteorologia_db
+JWT_SECRET_KEY=430b6a18b0b70d81cdd91c9b02599347e8cbe99a033eb2b697301c8fe1fe2209</pre>
+    </div>
+    <div class="callout warn">
+      <strong>Atenção</strong>
+      O arquivo <code>.env</code> nunca deve ser enviado para o GitHub, pois ele contém senhas e chaves de acesso.
+    </div>
+    <h3>Passo 3 - Crie o arquivo de conexão com o banco de dados</h3>
+    <p>Na raiz da pasta do projeto, crie um arquivo chamado de <code>database.py</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — database.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># Biblioteca de conexão com o banco de dados.</span>
+<span class="kw">import</span> mysql.connector
+
+<span class="cm"># Biblioteca para leitura de variáveis de ambiente.</span>
+<span class="kw">import</span> os
+<span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="cm"># Carrega as variáveis do arquivo .env</span>
+load_dotenv()
+
+<span class="cm"># Função responsável pela conexão com o banco.</span>
+<span class="kw">def</span> database_connection():
+
+    <span class="kw">return</span> mysql.connector.connect(
+        host=os.getenv(<span class="st">&quot;DB_HOST&quot;</span>),
+        user=os.getenv(<span class="st">&quot;DB_USER&quot;</span>),
+        password=os.getenv(<span class="st">&quot;DB_PASSWORD&quot;</span>),
+        database=os.getenv(<span class="st">&quot;DB_NAME&quot;</span>)
+    )</pre>
+    </div>
+    <h3>Passo 4 - Crie o arquivo de backend</h3>
+    <p>Na raiz da pasta do projeto, crie um arquivo chamado de <code>app.py</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># Bibliotecas para arquitetura de aplicações da web.</span>
+<span class="kw">from</span> flask <span class="kw">import</span> Flask, request, jsonify
+
+<span class="cm"># Biblioteca para criptografar senhas.</span>
+<span class="kw">from</span> werkzeug.security <span class="kw">import</span> generate_password_hash, check_password_hash
+
+<span class="cm"># Biblioteca para interação do frontend com o backend.</span>
+<span class="kw">from</span> flask_cors <span class="kw">import</span> CORS
+
+<span class="cm"># Biblioteca para autenticação do Token da Web (JWT).</span>
+<span class="kw">from</span> flask_jwt_extended <span class="kw">import</span> JWTManager, create_access_token, jwt_required, get_jwt_identity
+
+<span class="cm"># Biblioteca para manipular datas.</span>
+<span class="kw">from</span> datetime <span class="kw">import</span> timedelta
+
+<span class="cm"># Módulo de conexão com o banco de dados.</span>
+<span class="kw">from</span> database <span class="kw">import</span> database_connection
+
+<span class="cm"># Biblioteca para leitura de variáveis de ambiente.</span>
+<span class="kw">import</span> os
+<span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="cm"># Captura as variáveis de ambiente.</span>
+load_dotenv()
+
+<span class="cm"># Inicia a aplicação da web.</span>
+app = Flask(__name__)
+
+<span class="cm"># Permite que sejam feitas requisições de fora.</span>
+CORS(app)
+
+<span class="cm"># Configurações do Token da Web (JWT).</span>
+app.config[<span class="st">&quot;JWT_SECRET_KEY&quot;</span>] = os.getenv(<span class="st">&quot;JWT_SECRET_KEY&quot;</span>)
+app.config[<span class="st">&quot;JWT_ACCESS_TOKEN_EXPIRES&quot;</span>] = timedelta(hours=<span class="num">8</span>)
+
+<span class="cm"># Inicializa o gerenciador de Tokens da Web (JWT).</span>
+jwt = JWTManager(app)
+
+
+<span class="cm"># -------------------------</span>
+<span class="cm"># Executa a aplicação da web com modo de depuração ativo.</span>
+<span class="kw">if</span> __name__ == <span class="st">&quot;__main__&quot;</span>:
+
+    app.run(debug=<span class="kw">True</span>)</pre>
+    </div>
+    <h3>Passo 5 - Compreender a estrutura do backend</h3>
+    <ul class="bullets">
+      <li><strong>load_dotenv()</strong> lê o arquivo <code>.env</code>, e <code>os.getenv()</code> recupera cada valor guardado nele.</li>
+      <li><strong>database_connection()</strong> centraliza a conexão com o banco de dados em um único lugar, que será reaproveitado por todas as rotas.</li>
+      <li><strong>CORS(app)</strong> é necessário porque o frontend roda no Live Server (porta 5500) e o backend roda no Flask (porta 5000). Sem o CORS (Cross-Origin Resource Sharing), o navegador da web bloquearia as requisições entre as duas portas.</li>
+      <li><strong>JWT_ACCESS_TOKEN_EXPIRES</strong> define que o token da web (JWT, JSON Web Token) gerado no login vale por 8 horas.</li>
+    </ul>
+    <h3>Passo 6 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+├── .env
+├── database.py
+├── app.py
+│
+├── static/
+│   └── dashboard.js
+│
+└── templates/
+    └── dashboard.html</pre>
+    </div>
+    <h3>Passo 7 - Teste o backend</h3>
+    <p>No terminal do VS Code, execute o comando <code>python app.py</code>.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      O terminal deve exibir a mensagem <code>Running on http://127.0.0.1:5000</code>. Deixe esse terminal aberto, pois o backend precisa continuar rodando durante as próximas etapas.
+    </div>
+
+  </section>
+
+  <section id="etapa-4">
+
+    <span class="etapa-tag">ETAPA 4 DE 9</span>
+    <h1>Rotas de Backend para Cadastro e Login</h1>
+    <p class="intro">Com o backend rodando, vamos criar as duas primeiras rotas, uma para cadastrar um novo usuário e outra para fazer login. Essas rotas formam a API local que será consumida pelo frontend nas próximas etapas.</p>
+
+    <div class="callout note">
+      <strong>Etapa de copiar e colar</strong>
+      O foco deste projeto é o frontend. Os códigos de banco de dados e de backend desta etapa são fornecidos prontos, basta copiá-los e colá-los nos arquivos indicados.
+    </div>
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Adicione a rota de login</h3>
+    <p>No arquivo <code>app.py</code>, logo abaixo da linha <code>jwt = JWTManager(app)</code>, adicione a rota abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># -------------------------</span>
+<span class="cm"># Rota para fazer login.</span>
+@app.route(<span class="st">&quot;/api/login&quot;</span>, methods=[<span class="st">&quot;POST&quot;</span>])
+<span class="kw">def</span> login():
+
+    <span class="cm"># Recebe os dados do frontend.</span>
+    dados = request.get_json()
+    cpf = dados.get(<span class="st">&quot;cpf&quot;</span>)
+    senha = dados.get(<span class="st">&quot;senha&quot;</span>)
+
+    <span class="cm"># Abre uma conexão com o banco de dados.</span>
+    link = database_connection()
+    cursor = link.cursor(dictionary=<span class="kw">True</span>)
+
+    <span class="cm"># Roda o SQL para buscar os dados do usuário.</span>
+    cursor.execute(<span class="st">&quot;SELECT * FROM usuario WHERE cpf = %s&quot;</span>, (cpf,))
+    usuario = cursor.fetchone()
+
+    <span class="cm"># Fecha a conexão com o banco de dados.</span>
+    cursor.close()
+    link.close()
+
+    <span class="cm"># Verifica se o usuário existe e se a senha está correta.</span>
+    <span class="kw">if</span> <span class="kw">not</span> usuario <span class="kw">or</span> <span class="kw">not</span> check_password_hash(usuario[<span class="st">&quot;senha&quot;</span>], senha):
+
+        <span class="kw">return</span> jsonify({<span class="st">&quot;erro&quot;</span>: <span class="st">&quot;CPF ou senha inválidos...&quot;</span>}), <span class="num">401</span>
+
+    <span class="cm"># Gera o token da web (JWT) com o ID do usuário.</span>
+    token = create_access_token(identity=str(usuario[<span class="st">&quot;id&quot;</span>]))
+
+    <span class="kw">return</span> jsonify({<span class="st">&quot;token&quot;</span>: token, <span class="st">&quot;nome&quot;</span>: usuario[<span class="st">&quot;nome&quot;</span>]}), <span class="num">200</span></pre>
+    </div>
+    <h3>Passo 2 - Adicione a rota de cadastro de usuário</h3>
+    <p>Logo abaixo da rota de login, adicione a rota abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># -------------------------</span>
+<span class="cm"># Rota para cadastrar um novo usuário (cadastro público).</span>
+@app.route(<span class="st">&quot;/api/usuarios&quot;</span>, methods=[<span class="st">&quot;POST&quot;</span>])
+<span class="kw">def</span> cadastrar_usuario():
+
+    <span class="cm"># Recebe os dados do frontend.</span>
+    dados = request.get_json()
+    nome = dados.get(<span class="st">&quot;nome&quot;</span>)
+    cpf = dados.get(<span class="st">&quot;cpf&quot;</span>)
+    email = dados.get(<span class="st">&quot;email&quot;</span>)
+    senha = dados.get(<span class="st">&quot;senha&quot;</span>)
+    telefone = dados.get(<span class="st">&quot;telefone&quot;</span>)
+    data_nascimento = dados.get(<span class="st">&quot;data_nascimento&quot;</span>)
+
+    <span class="cm"># Criptografa a senha.</span>
+    senha_hash = generate_password_hash(senha)
+
+    <span class="cm"># Abre uma conexão com o banco de dados.</span>
+    link = database_connection()
+    cursor = link.cursor(dictionary=<span class="kw">True</span>)
+
+    <span class="cm"># Verifica se o CPF ou e-mail já estão cadastrados.</span>
+    cursor.execute(<span class="st">&quot;SELECT id FROM usuario WHERE cpf = %s OR email = %s&quot;</span>, (cpf, email))
+    <span class="kw">if</span> cursor.fetchone():
+        cursor.close()
+        link.close()
+        <span class="kw">return</span> jsonify({<span class="st">&quot;erro&quot;</span>: <span class="st">&quot;CPF ou e-mail já cadastrados...&quot;</span>}), <span class="num">409</span>
+
+    <span class="cm"># Roda o SQL para cadastrar o usuário.</span>
+    cursor.execute(<span class="st">&quot;&quot;&quot;
+        INSERT INTO usuario (nome, cpf, email, senha, telefone, data_nascimento)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    &quot;&quot;&quot;</span>, (nome, cpf, email, senha_hash, telefone, data_nascimento))
+
+    link.commit()
+
+    <span class="cm"># Fecha a conexão com o banco de dados.</span>
+    cursor.close()
+    link.close()
+
+    <span class="kw">return</span> jsonify({<span class="st">&quot;mensagem&quot;</span>: <span class="st">&quot;Usuário cadastrado com sucesso!&quot;</span>}), <span class="num">201</span></pre>
+    </div>
+    <h3>Passo 3 - Compreender as rotas da API local</h3>
+    <p>Do ponto de vista do frontend, o que importa é saber o endereço de cada rota, o que enviar e o que esperar de volta:</p>
+    <ul class="bullets">
+      <li><strong>POST /api/usuarios</strong> recebe <code>nome</code>, <code>cpf</code>, <code>email</code>, <code>senha</code>, <code>telefone</code> e <code>data_nascimento</code>. Devolve <code>201</code> com uma <code>mensagem</code> quando o cadastro dá certo, ou <code>409</code> com um <code>erro</code> quando o CPF ou o e-mail já existem.</li>
+      <li><strong>POST /api/login</strong> recebe <code>cpf</code> e <code>senha</code>. Devolve <code>200</code> com o <code>token</code> e o <code>nome</code> do usuário quando os dados estão corretos, ou <code>401</code> com um <code>erro</code> quando não estão.</li>
+      <li><strong>generate_password_hash</strong> criptografa a senha antes de gravá-la no banco de dados, e <strong>check_password_hash</strong> compara a senha digitada no login com essa versão criptografada.</li>
+      <li><strong>create_access_token</strong> gera o token da web (JWT) que vai identificar o usuário nas próximas requisições.</li>
+    </ul>
+    <div class="callout note">
+      <strong>Reinício automático do backend</strong>
+      Como o <code>app.py</code> roda com <code>debug=True</code>, o Flask reinicia sozinho sempre que o arquivo é salvo. Se o terminal exibir algum erro, confira se as rotas foram coladas antes do bloco que executa a aplicação da web.
+    </div>
+
+  </section>
+
+  <section id="etapa-5">
+
+    <span class="etapa-tag">ETAPA 5 DE 9</span>
+    <h1>HTML para Cadastro e Login</h1>
+    <p class="intro">Com as rotas prontas no backend, vamos construir as duas telas que o usuário vai usar para criar a conta e para entrar no sistema computacional.</p>
+
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Crie a tela de cadastro de usuário</h3>
+    <p>Dentro da pasta <code>templates</code>, crie um arquivo chamado de <code>cadastro.html</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">html — cadastro.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>&lt;!DOCTYPE html&gt;
+<span class="kw">&lt;html</span> lang=<span class="st">&quot;pt-BR&quot;</span>&gt;
+<span class="kw">&lt;head</span>&gt;
+    <span class="kw">&lt;meta</span> charset=<span class="st">&quot;UTF-8&quot;</span>&gt;
+    <span class="kw">&lt;meta</span> name=<span class="st">&quot;viewport&quot;</span> content=<span class="st">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;
+    <span class="kw">&lt;title</span>&gt;Cadastro de Usuário - MMI<span class="kw">&lt;/title</span>&gt;
+    <span class="kw">&lt;link</span> href=<span class="st">&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css&quot;</span> rel=<span class="st">&quot;stylesheet&quot;</span>&gt;
+<span class="kw">&lt;/head</span>&gt;
+
+<span class="kw">&lt;body</span> class=<span class="st">&quot;bg-light&quot;</span>&gt;
+    <span class="kw">&lt;div</span> class=<span class="st">&quot;container py-5&quot;</span>&gt;
+
+        <span class="kw">&lt;h1</span> class=<span class="st">&quot;h3 text-center mb-4&quot;</span>&gt;Monitoramento Meteorológico Integrado - MMI<span class="kw">&lt;/h1</span>&gt;
+
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;row justify-content-center&quot;</span>&gt;
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-10 col-lg-8&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        <span class="kw">&lt;b</span>&gt;Cadastro de Usuário<span class="kw">&lt;/b</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+
+                        <span class="cm">&lt;!-- Área para mensagens de sucesso ou falha --&gt;</span>
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;mensagem&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Campos do formulário dispostos em 2 colunas --&gt;</span>
+                        <span class="kw">&lt;div</span> class=<span class="st">&quot;row g-3&quot;</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do nome --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-12&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;nome&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Nome<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;text&quot;</span> id=<span class="st">&quot;nome&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do CPF --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;CPF<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;text&quot;</span> id=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo da data de nascimento --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;data-nascimento&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Data de Nascimento<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;date&quot;</span> id=<span class="st">&quot;data-nascimento&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do e-mail --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;email&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;E-mail<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;email&quot;</span> id=<span class="st">&quot;email&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do telefone --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;telefone&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Telefone<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;tel&quot;</span> id=<span class="st">&quot;telefone&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo da senha --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Senha<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;password&quot;</span> id=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo de confirmação da senha --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;confirmar-senha&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Confirmar Senha<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;password&quot;</span> id=<span class="st">&quot;confirmar-senha&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Botão para enviar o cadastro --&gt;</span>
+                        <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-cadastrar&quot;</span> class=<span class="st">&quot;btn text-white w-100 mt-4&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                            Cadastrar
+                        <span class="kw">&lt;/button</span>&gt;
+
+                        <span class="cm">&lt;!-- Link para a tela de login --&gt;</span>
+                        <span class="kw">&lt;p</span> class=<span class="st">&quot;text-center mt-3 mb-0&quot;</span>&gt;
+                            Já tem conta?
+                            <span class="kw">&lt;a</span> href=<span class="st">&quot;index.html&quot;</span>&gt;Faça login<span class="kw">&lt;/a</span>&gt;
+                        <span class="kw">&lt;/p</span>&gt;
+
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;
+    <span class="kw">&lt;/div</span>&gt;
+
+    <span class="cm">&lt;!-- JS com as máscaras dos campos (CPF e telefone) --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/mascaras.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+
+    <span class="cm">&lt;!-- JS que irá consumir o backend --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/cadastro.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+<span class="kw">&lt;/body</span>&gt;
+<span class="kw">&lt;/html</span>&gt;</pre>
+    </div>
+    <h3>Passo 2 - Crie a tela de login</h3>
+    <p>Dentro da pasta <code>templates</code>, crie um arquivo chamado de <code>index.html</code> com o conteúdo abaixo. Ele se chama <code>index.html</code> porque é a primeira tela do sistema computacional:</p>
+    <div class="code-block">
+      <div class="lang-tag">html — index.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>&lt;!DOCTYPE html&gt;
+<span class="kw">&lt;html</span> lang=<span class="st">&quot;pt-BR&quot;</span>&gt;
+<span class="kw">&lt;head</span>&gt;
+    <span class="kw">&lt;meta</span> charset=<span class="st">&quot;UTF-8&quot;</span>&gt;
+    <span class="kw">&lt;meta</span> name=<span class="st">&quot;viewport&quot;</span> content=<span class="st">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;
+    <span class="kw">&lt;title</span>&gt;Login - MMI<span class="kw">&lt;/title</span>&gt;
+    <span class="kw">&lt;link</span> href=<span class="st">&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css&quot;</span> rel=<span class="st">&quot;stylesheet&quot;</span>&gt;
+<span class="kw">&lt;/head</span>&gt;
+
+<span class="kw">&lt;body</span> class=<span class="st">&quot;bg-light&quot;</span>&gt;
+    <span class="kw">&lt;div</span> class=<span class="st">&quot;container py-5&quot;</span>&gt;
+
+        <span class="kw">&lt;h1</span> class=<span class="st">&quot;h3 text-center mb-4&quot;</span>&gt;Monitoramento Meteorológico Integrado - MMI<span class="kw">&lt;/h1</span>&gt;
+
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;row justify-content-center&quot;</span>&gt;
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6 col-lg-5&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        <span class="kw">&lt;b</span>&gt;LOGIN<span class="kw">&lt;/b</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+
+                        <span class="cm">&lt;!-- Área para mensagens de sucesso ou falha --&gt;</span>
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;mensagem&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Campo do CPF --&gt;</span>
+                        <span class="kw">&lt;div</span> class=<span class="st">&quot;mb-3&quot;</span>&gt;
+                            <span class="kw">&lt;label</span> for=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;CPF<span class="kw">&lt;/label</span>&gt;
+                            <span class="kw">&lt;input</span> type=<span class="st">&quot;text&quot;</span> id=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                        <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Campo da senha --&gt;</span>
+                        <span class="kw">&lt;div</span> class=<span class="st">&quot;mb-3&quot;</span>&gt;
+                            <span class="kw">&lt;label</span> for=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Senha<span class="kw">&lt;/label</span>&gt;
+                            <span class="kw">&lt;input</span> type=<span class="st">&quot;password&quot;</span> id=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                        <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Botão para enviar o login --&gt;</span>
+                        <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-entrar&quot;</span> class=<span class="st">&quot;btn text-white w-100&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                            Entrar
+                        <span class="kw">&lt;/button</span>&gt;
+
+                        <span class="cm">&lt;!-- Link para a tela de cadastro --&gt;</span>
+                        <span class="kw">&lt;p</span> class=<span class="st">&quot;text-center mt-3 mb-0&quot;</span>&gt;
+                            Não tem conta?
+                            <span class="kw">&lt;a</span> href=<span class="st">&quot;cadastro.html&quot;</span>&gt;Cadastre-se<span class="kw">&lt;/a</span>&gt;
+                        <span class="kw">&lt;/p</span>&gt;
+
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;
+    <span class="kw">&lt;/div</span>&gt;
+
+    <span class="cm">&lt;!-- JS com as máscaras dos campos (CPF e telefone) --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/mascaras.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+
+    <span class="cm">&lt;!-- JS que irá consumir o backend --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/login.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+<span class="kw">&lt;/body</span>&gt;
+<span class="kw">&lt;/html</span>&gt;</pre>
+    </div>
+    <h3>Passo 3 - Compreender as telas criadas</h3>
+    <ul class="bullets">
+      <li>Cada campo tem um <code>id</code> único (<code>nome</code>, <code>cpf</code>, <code>senha</code> e assim por diante). É por esse <code>id</code> que o JavaScript vai ler o valor digitado pelo usuário.</li>
+      <li>A <code>&lt;div id="mensagem"&gt;</code> começa vazia e será preenchida pelo JavaScript com mensagens de sucesso ou de erro.</li>
+      <li>Os tipos <code>date</code>, <code>email</code>, <code>tel</code> e <code>password</code> fazem o navegador da web exibir o campo adequado para cada dado, como o calendário na data de nascimento e os caracteres ocultos na senha.</li>
+      <li>As tags <code>&lt;script&gt;</code> ficam no final do <code>&lt;body&gt;</code> para que o JavaScript só seja carregado depois que todos os campos já existirem na página.</li>
+    </ul>
+    <h3>Passo 4 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+├── .env
+├── database.py
+├── app.py
+│
+├── static/
+│   └── dashboard.js
+│
+└── templates/
+    ├── cadastro.html
+    ├── dashboard.html
+    └── index.html</pre>
+    </div>
+    <h3>Passo 5 - Teste as telas</h3>
+    <p>Abra o <code>index.html</code> pelo Live Server e navegue entre as telas usando os links de <code>Cadastre-se</code> e de <code>Faça login</code>.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      As duas telas devem aparecer com o layout correto, mas os botões ainda não fazem nada. O console do navegador da web vai indicar que os arquivos de JavaScript não foram encontrados, o que é esperado, pois eles serão criados na próxima etapa.
+    </div>
+
+  </section>
+
+  <section id="etapa-6">
+
+    <span class="etapa-tag">ETAPA 6 DE 9</span>
+    <h1>JavaScript para Cadastro e Login</h1>
+    <p class="intro">Agora vamos dar vida às telas de cadastro e de login, consumindo a API local criada na etapa 4. Nesta etapa também vamos proteger o dashboard, para que ele só possa ser acessado por quem fez login, e criar o botão de logout.</p>
+
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Crie o JavaScript das máscaras</h3>
+    <p>Dentro da pasta <code>static</code>, crie um arquivo chamado de <code>mascaras.js</code> com o conteúdo abaixo. Ele formata o CPF e o telefone enquanto o usuário digita:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — mascaras.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Captura os campos que receberão máscara.</span>
+<span class="kw">const</span> campoCpf = document.getElementById(<span class="st">&quot;cpf&quot;</span>);
+<span class="kw">const</span> campoTelefone = document.getElementById(<span class="st">&quot;telefone&quot;</span>);
+
+<span class="cm">// Aplica a máscara de CPF: 000.000.000-00</span>
+<span class="kw">function</span> mascaraCpf(valor) {
+
+    <span class="cm">// Mantém somente os números e limita a 11 dígitos.</span>
+    valor = valor.replace(/\D/g, <span class="st">&quot;&quot;</span>).slice(<span class="num">0</span>, <span class="num">11</span>);
+
+    <span class="cm">// Insere o ponto após o terceiro dígito.</span>
+    valor = valor.replace(/(\d{<span class="num">3</span>})(\d)/, <span class="st">&quot;$1.$2&quot;</span>);
+
+    <span class="cm">// Insere o ponto após o sexto dígito.</span>
+    valor = valor.replace(/(\d{<span class="num">3</span>})(\d)/, <span class="st">&quot;$1.$2&quot;</span>);
+
+    <span class="cm">// Insere o traço antes dos dois últimos dígitos.</span>
+    valor = valor.replace(/(\d{<span class="num">3</span>})(\d{<span class="num">1</span>,<span class="num">2</span>})$/, <span class="st">&quot;$1-$2&quot;</span>);
+
+    <span class="kw">return</span> valor;
+}
+
+<span class="cm">// Aplica a máscara de telefone: (00) 00000-0000</span>
+<span class="kw">function</span> mascaraTelefone(valor) {
+
+    <span class="cm">// Mantém somente os números e limita a 11 dígitos.</span>
+    valor = valor.replace(/\D/g, <span class="st">&quot;&quot;</span>).slice(<span class="num">0</span>, <span class="num">11</span>);
+
+    <span class="cm">// Insere os parênteses ao redor do DDD.</span>
+    valor = valor.replace(/(\d{<span class="num">2</span>})(\d)/, <span class="st">&quot;($1) $2&quot;</span>);
+
+    <span class="cm">// Insere o traço antes dos quatro últimos dígitos.</span>
+    valor = valor.replace(/(\d{<span class="num">4</span>,<span class="num">5</span>})(\d{<span class="num">4</span>})$/, <span class="st">&quot;$1-$2&quot;</span>);
+
+    <span class="kw">return</span> valor;
+}
+
+<span class="cm">// Formata o CPF enquanto o usuário digita.</span>
+campoCpf.addEventListener(<span class="st">&quot;input&quot;</span>, <span class="kw">function</span> () {
+
+    campoCpf.value = mascaraCpf(campoCpf.value);
+});
+
+<span class="cm">// Aplica a máscara de telefone apenas se o campo existir na página atual.</span>
+<span class="kw">if</span> (campoTelefone) {
+
+    <span class="cm">// Formata o telefone enquanto o usuário digita.</span>
+    campoTelefone.addEventListener(<span class="st">&quot;input&quot;</span>, <span class="kw">function</span> () {
+
+        campoTelefone.value = mascaraTelefone(campoTelefone.value);
+    });
+}</pre>
+    </div>
+    <h3>Passo 2 - Crie o JavaScript do cadastro de usuário</h3>
+    <p>Dentro da pasta <code>static</code>, crie um arquivo chamado de <code>cadastro.js</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — cadastro.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Endereço base do backend local.</span>
+<span class="kw">const</span> API = <span class="st">&quot;http://localhost:5000&quot;</span>;
+
+<span class="cm">// Captura o botão de cadastro.</span>
+<span class="kw">const</span> botaoCadastrar = document.getElementById(<span class="st">&quot;botao-cadastrar&quot;</span>);
+
+<span class="cm">// Exibe uma mensagem de status na tela (alerta do Bootstrap).</span>
+<span class="kw">function</span> exibirMensagem(texto, tipo) {
+
+    <span class="kw">const</span> mensagem = document.getElementById(<span class="st">&quot;mensagem&quot;</span>);
+
+    mensagem.innerHTML =
+        <span class="st">&#x27;&lt;div class=&quot;alert alert-&#x27;</span> + tipo + <span class="st">&#x27;&quot;&gt;&#x27;</span> + texto + <span class="st">&quot;&lt;/div&gt;&quot;</span>;
+}
+
+<span class="cm">// Envia os dados do formulário para o backend.</span>
+<span class="kw">async</span> <span class="kw">function</span> cadastrar() {
+
+    <span class="cm">// Monta o objeto com os dados digitados.</span>
+    <span class="kw">const</span> usuario = {
+        nome: document.getElementById(<span class="st">&quot;nome&quot;</span>).value,
+        cpf: document.getElementById(<span class="st">&quot;cpf&quot;</span>).value,
+        email: document.getElementById(<span class="st">&quot;email&quot;</span>).value,
+        senha: document.getElementById(<span class="st">&quot;senha&quot;</span>).value,
+        telefone: document.getElementById(<span class="st">&quot;telefone&quot;</span>).value || <span class="kw">null</span>,
+        data_nascimento: document.getElementById(<span class="st">&quot;data-nascimento&quot;</span>).value || <span class="kw">null</span>
+    };
+
+    <span class="cm">// Verifica se os campos obrigatórios foram preenchidos.</span>
+    <span class="kw">if</span> (!usuario.nome || !usuario.cpf || !usuario.email || !usuario.senha) {
+
+        exibirMensagem(<span class="st">&quot;Preencha todos os campos obrigatórios...&quot;</span>, <span class="st">&quot;warning&quot;</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// Verifica se a senha e a confirmação de senha são iguais.</span>
+    <span class="kw">const</span> confirmarSenha = document.getElementById(<span class="st">&quot;confirmar-senha&quot;</span>).value;
+
+    <span class="kw">if</span> (usuario.senha !== confirmarSenha) {
+
+        exibirMensagem(<span class="st">&quot;As senhas não coincidem...&quot;</span>, <span class="st">&quot;warning&quot;</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">try</span> {
+
+        <span class="cm">// Envia a requisição de cadastro para o backend.</span>
+        <span class="kw">const</span> resposta = <span class="kw">await</span> fetch(API + <span class="st">&quot;/api/usuarios&quot;</span>, {
+            method: <span class="st">&quot;POST&quot;</span>,
+            headers: { <span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span> },
+            body: JSON.stringify(usuario)
+        });
+
+        <span class="cm">// Lê o corpo da resposta em formato JSON.</span>
+        <span class="kw">const</span> dados = <span class="kw">await</span> resposta.json();
+
+        <span class="cm">// Verifica o status da resposta.</span>
+        <span class="kw">if</span> (resposta.ok) {
+
+            <span class="cm">// Cadastro realizado com sucesso.</span>
+            exibirMensagem(dados.mensagem, <span class="st">&quot;success&quot;</span>);
+
+            <span class="cm">// Redireciona para o login após 2 segundos.</span>
+            setTimeout(<span class="kw">function</span> () {
+                window.location.href = <span class="st">&quot;index.html&quot;</span>;
+            }, <span class="num">2000</span>);
+
+        } <span class="kw">else</span> {
+
+            <span class="cm">// Erro tratado pelo backend.</span>
+            exibirMensagem(dados.erro, <span class="st">&quot;danger&quot;</span>);
+        }
+
+    } <span class="kw">catch</span> (erro) {
+
+        <span class="cm">// Erro de conexão com o backend.</span>
+        exibirMensagem(<span class="st">&quot;Não foi possível conectar ao servidor...&quot;</span>, <span class="st">&quot;danger&quot;</span>);
+    }
+}
+
+<span class="cm">// Dispara o cadastro ao clicar no botão.</span>
+botaoCadastrar.addEventListener(<span class="st">&quot;click&quot;</span>, cadastrar);</pre>
+    </div>
+    <h3>Passo 3 - Crie o JavaScript do login</h3>
+    <p>Dentro da pasta <code>static</code>, crie um arquivo chamado de <code>login.js</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — login.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Endereço base do backend local.</span>
+<span class="kw">const</span> API = <span class="st">&quot;http://localhost:5000&quot;</span>;
+
+<span class="cm">// Captura o botão de login.</span>
+<span class="kw">const</span> botaoEntrar = document.getElementById(<span class="st">&quot;botao-entrar&quot;</span>);
+
+<span class="cm">// Exibe uma mensagem de status na tela (alerta do Bootstrap).</span>
+<span class="kw">function</span> exibirMensagem(texto, tipo) {
+
+    <span class="kw">const</span> mensagem = document.getElementById(<span class="st">&quot;mensagem&quot;</span>);
+
+    mensagem.innerHTML =
+        <span class="st">&#x27;&lt;div class=&quot;alert alert-&#x27;</span> + tipo + <span class="st">&#x27;&quot;&gt;&#x27;</span> + texto + <span class="st">&quot;&lt;/div&gt;&quot;</span>;
+}
+
+<span class="cm">// Envia os dados do formulário para o backend.</span>
+<span class="kw">async</span> <span class="kw">function</span> entrar() {
+
+    <span class="cm">// Monta o objeto com os dados digitados.</span>
+    <span class="kw">const</span> usuario = {
+        cpf: document.getElementById(<span class="st">&quot;cpf&quot;</span>).value,
+        senha: document.getElementById(<span class="st">&quot;senha&quot;</span>).value
+    };
+
+    <span class="cm">// Verifica se os campos obrigatórios foram preenchidos.</span>
+    <span class="kw">if</span> (!usuario.cpf || !usuario.senha) {
+
+        exibirMensagem(<span class="st">&quot;Preencha todos os campos obrigatórios...&quot;</span>, <span class="st">&quot;warning&quot;</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">try</span> {
+
+        <span class="cm">// Envia a requisição de login para o backend.</span>
+        <span class="kw">const</span> resposta = <span class="kw">await</span> fetch(API + <span class="st">&quot;/api/login&quot;</span>, {
+            method: <span class="st">&quot;POST&quot;</span>,
+            headers: { <span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span> },
+            body: JSON.stringify(usuario)
+        });
+
+        <span class="cm">// Lê o corpo da resposta em formato JSON.</span>
+        <span class="kw">const</span> dados = <span class="kw">await</span> resposta.json();
+
+        <span class="cm">// Verifica o status da resposta.</span>
+        <span class="kw">if</span> (resposta.ok) {
+
+            <span class="cm">// Guarda o token da web (JWT) e o nome do usuário para as próximas requisições.</span>
+            localStorage.setItem(<span class="st">&quot;token&quot;</span>, dados.token);
+            localStorage.setItem(<span class="st">&quot;nome&quot;</span>, dados.nome);
+
+            window.location.href = <span class="st">&quot;dashboard.html&quot;</span>;
+
+        } <span class="kw">else</span> {
+
+            <span class="cm">// Erro tratado pelo backend (ex.: 401, CPF ou senha inválidos).</span>
+            exibirMensagem(dados.erro, <span class="st">&quot;danger&quot;</span>);
+        }
+
+    } <span class="kw">catch</span> (erro) {
+
+        <span class="cm">// Erro de conexão com o backend.</span>
+        exibirMensagem(<span class="st">&quot;Não foi possível conectar ao servidor...&quot;</span>, <span class="st">&quot;danger&quot;</span>);
+    }
+}
+
+<span class="cm">// Dispara o login ao clicar no botão.</span>
+botaoEntrar.addEventListener(<span class="st">&quot;click&quot;</span>, entrar);</pre>
+    </div>
+    <h3>Passo 4 - Adicione o botão de logout no dashboard</h3>
+    <p>No arquivo <code>dashboard.html</code>, adicione o bloco abaixo logo abaixo do <code>&lt;h1&gt;</code> que tem o título da aplicação (Monitoramento Meteorológico Integrado - MMI):</p>
+    <div class="code-block">
+      <div class="lang-tag">html — dashboard.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>        <span class="cm">&lt;!-- Botões de navegação da sessão --&gt;</span>
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;d-flex justify-content-center gap-2 mb-4&quot;</span>&gt;
+            <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-sair&quot;</span> class=<span class="st">&quot;btn btn-outline-danger btn-sm&quot;</span>&gt;Sair<span class="kw">&lt;/button</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;</pre>
+    </div>
+    <h3>Passo 5 - Proteja o dashboard e crie a função de logout</h3>
+    <p>No arquivo <code>dashboard.js</code>, adicione as linhas abaixo no início do arquivo, acima da constante <code>leituras</code>:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — dashboard.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Verifica se o usuário está logado antes de carregar o dashboard.</span>
+<span class="kw">if</span> (!localStorage.getItem(<span class="st">&quot;token&quot;</span>)) {
+
+    <span class="cm">// Redireciona para a tela de login.</span>
+    window.location.href = <span class="st">&quot;index.html&quot;</span>;
+}
+
+<span class="cm">// Captura o botão de logout.</span>
+<span class="kw">const</span> botaoSair = document.getElementById(<span class="st">&quot;botao-sair&quot;</span>);
+
+<span class="cm">// Remove os dados da sessão e volta para a tela de login.</span>
+<span class="kw">function</span> sair() {
+
+    localStorage.removeItem(<span class="st">&quot;token&quot;</span>);
+    localStorage.removeItem(<span class="st">&quot;nome&quot;</span>);
+
+    window.location.href = <span class="st">&quot;index.html&quot;</span>;
+}
+
+<span class="cm">// Dispara o logout ao clicar no botão.</span>
+botaoSair.addEventListener(<span class="st">&quot;click&quot;</span>, sair);</pre>
+    </div>
+    <h3>Passo 6 - Compreender o consumo da API local</h3>
+    <ul class="bullets">
+      <li>Na etapa 1 usamos <code>.then()</code> para tratar a resposta do <code>fetch</code>. Aqui usamos <code>async</code> e <code>await</code>, que fazem a mesma coisa com uma escrita mais próxima de um código sequencial.</li>
+      <li><strong>method: "POST"</strong>, <strong>headers</strong> e <strong>body: JSON.stringify(usuario)</strong> enviam os dados do formulário para o backend no formato JSON.</li>
+      <li><strong>resposta.ok</strong> é verdadeiro quando o backend devolve um código de sucesso (como <code>200</code> ou <code>201</code>), e falso quando devolve um código de erro (como <code>401</code> ou <code>409</code>).</li>
+      <li>O bloco <strong>try/catch</strong> trata o caso em que o backend nem chegou a responder, como quando o <code>app.py</code> não está rodando.</li>
+      <li>No cadastro, a senha e a confirmação de senha são comparadas no próprio JavaScript, antes de qualquer requisição ser enviada ao backend.</li>
+      <li>No login, o <strong>token</strong> devolvido pelo backend é guardado no <code>localStorage</code>. O dashboard verifica se esse token existe e, se não existir, redireciona o usuário para a tela de login. A função <code>sair()</code> apaga o token e faz o caminho inverso.</li>
+    </ul>
+    <div class="callout note">
+      <strong>Sobre o localStorage</strong>
+      O <code>localStorage</code> é um espaço de armazenamento simples do próprio navegador da web, separado por site. Ele é adequado para guardar o token durante a sessão, mas não deve ser usado para dados sensíveis, pois qualquer script rodando na página consegue acessá-lo.
+    </div>
+    <h3>Passo 7 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+├── .env
+├── database.py
+├── app.py
+│
+├── static/
+│   ├── cadastro.js
+│   ├── dashboard.js
+│   ├── login.js
+│   └── mascaras.js
+│
+└── templates/
+    ├── cadastro.html
+    ├── dashboard.html
+    └── index.html</pre>
+    </div>
+    <h3>Passo 8 - Teste o cadastro, o login e o logout</h3>
+    <p>Execute o <code>app.py</code> no terminal dedicado do VS Code e abra o <code>index.html</code> pelo Live Server. Cadastre um novo usuário, faça login com o CPF e a senha cadastrados e, já no dashboard, clique no botão <code>Sair</code>. Por fim, tente abrir o <code>dashboard.html</code> diretamente, sem fazer login.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      Após o cadastro, a tela deve voltar sozinha para o login. Após o login, o dashboard deve abrir normalmente. Ao clicar em <code>Sair</code>, ou ao tentar abrir o dashboard sem login, o usuário deve ser levado para a tela de login. Teste também os casos de erro, como senhas diferentes no cadastro, CPF já cadastrado e senha incorreta no login.
+    </div>
+
+  </section>
+
+  <section id="etapa-7">
+
+    <span class="etapa-tag">ETAPA 7 DE 9</span>
+    <h1>Rotas de Backend para Editar e Excluir Dados do Usuário</h1>
+    <p class="intro">Até aqui o frontend usou apenas o método POST. Agora vamos criar três novas rotas para que o usuário logado possa ver, alterar e excluir os próprios dados, o que vai exigir os métodos GET, PUT e DELETE.</p>
+
+    <div class="callout note">
+      <strong>Etapa de copiar e colar</strong>
+      O foco deste projeto é o frontend. Os códigos de banco de dados e de backend desta etapa são fornecidos prontos, basta copiá-los e colá-los nos arquivos indicados.
+    </div>
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Adicione a rota para buscar os dados do perfil</h3>
+    <p>No arquivo <code>app.py</code>, logo abaixo da rota de cadastro de usuário (<code>cadastrar_usuario</code>), adicione a rota abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># -------------------------</span>
+<span class="cm"># Rota para buscar os dados do perfil do usuário logado.</span>
+@app.route(<span class="st">&quot;/api/perfil&quot;</span>, methods=[<span class="st">&quot;GET&quot;</span>])
+@jwt_required()
+<span class="kw">def</span> buscar_perfil():
+
+    <span class="cm"># Captura o ID do usuário a partir do token.</span>
+    usuario_id = get_jwt_identity()
+
+    <span class="cm"># Abre uma conexão com o banco de dados.</span>
+    link = database_connection()
+    cursor = link.cursor(dictionary=<span class="kw">True</span>)
+
+    <span class="cm"># Roda o SQL para buscar os dados do usuário (sem a senha).</span>
+    cursor.execute(<span class="st">&quot;&quot;&quot;
+        SELECT id, nome, cpf, email, telefone, data_nascimento
+        FROM usuario WHERE id = %s
+    &quot;&quot;&quot;</span>, (usuario_id,))
+    usuario = cursor.fetchone()
+
+    <span class="cm"># Fecha a conexão com o banco de dados.</span>
+    cursor.close()
+    link.close()
+
+    <span class="cm"># Verifica se o usuário ainda existe.</span>
+    <span class="kw">if</span> <span class="kw">not</span> usuario:
+
+        <span class="kw">return</span> jsonify({<span class="st">&quot;erro&quot;</span>: <span class="st">&quot;Usuário não encontrado...&quot;</span>}), <span class="num">404</span>
+
+    <span class="cm"># Converte a data para o formato aceito pelo campo do tipo &quot;date&quot; (AAAA-MM-DD).</span>
+    <span class="kw">if</span> usuario[<span class="st">&quot;data_nascimento&quot;</span>]:
+        usuario[<span class="st">&quot;data_nascimento&quot;</span>] = usuario[<span class="st">&quot;data_nascimento&quot;</span>].isoformat()
+
+    <span class="kw">return</span> jsonify(usuario), <span class="num">200</span></pre>
+    </div>
+    <h3>Passo 2 - Adicione a rota para alterar os dados do perfil</h3>
+    <p>Logo abaixo da rota anterior, adicione a rota abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># -------------------------</span>
+<span class="cm"># Rota para alterar os dados do perfil do usuário logado.</span>
+@app.route(<span class="st">&quot;/api/perfil&quot;</span>, methods=[<span class="st">&quot;PUT&quot;</span>])
+@jwt_required()
+<span class="kw">def</span> alterar_perfil():
+
+    <span class="cm"># Captura o ID do usuário a partir do token.</span>
+    usuario_id = get_jwt_identity()
+
+    <span class="cm"># Recebe os dados do frontend.</span>
+    dados = request.get_json()
+    nome = dados.get(<span class="st">&quot;nome&quot;</span>)
+    cpf = dados.get(<span class="st">&quot;cpf&quot;</span>)
+    email = dados.get(<span class="st">&quot;email&quot;</span>)
+    senha = dados.get(<span class="st">&quot;senha&quot;</span>)
+    telefone = dados.get(<span class="st">&quot;telefone&quot;</span>)
+    data_nascimento = dados.get(<span class="st">&quot;data_nascimento&quot;</span>)
+
+    <span class="cm"># Abre uma conexão com o banco de dados.</span>
+    link = database_connection()
+    cursor = link.cursor(dictionary=<span class="kw">True</span>)
+
+    <span class="cm"># Verifica se o CPF ou e-mail já pertencem a outro usuário.</span>
+    cursor.execute(<span class="st">&quot;&quot;&quot;
+        SELECT id FROM usuario WHERE (cpf = %s OR email = %s) AND id != %s
+    &quot;&quot;&quot;</span>, (cpf, email, usuario_id))
+    <span class="kw">if</span> cursor.fetchone():
+        cursor.close()
+        link.close()
+        <span class="kw">return</span> jsonify({<span class="st">&quot;erro&quot;</span>: <span class="st">&quot;CPF ou e-mail já cadastrados...&quot;</span>}), <span class="num">409</span>
+
+    <span class="cm"># Atualiza a senha somente se uma nova foi informada no formulário.</span>
+    <span class="kw">if</span> senha:
+
+        senha_hash = generate_password_hash(senha)
+
+        cursor.execute(<span class="st">&quot;&quot;&quot;
+            UPDATE usuario
+            SET nome = %s, cpf = %s, email = %s, senha = %s, telefone = %s, data_nascimento = %s
+            WHERE id = %s
+        &quot;&quot;&quot;</span>, (nome, cpf, email, senha_hash, telefone, data_nascimento, usuario_id))
+
+    <span class="kw">else</span>:
+
+        cursor.execute(<span class="st">&quot;&quot;&quot;
+            UPDATE usuario
+            SET nome = %s, cpf = %s, email = %s, telefone = %s, data_nascimento = %s
+            WHERE id = %s
+        &quot;&quot;&quot;</span>, (nome, cpf, email, telefone, data_nascimento, usuario_id))
+
+    link.commit()
+
+    <span class="cm"># Fecha a conexão com o banco de dados.</span>
+    cursor.close()
+    link.close()
+
+    <span class="kw">return</span> jsonify({<span class="st">&quot;mensagem&quot;</span>: <span class="st">&quot;Perfil atualizado com sucesso!&quot;</span>}), <span class="num">200</span></pre>
+    </div>
+    <h3>Passo 3 - Adicione a rota para excluir a conta</h3>
+    <p>Logo abaixo da rota anterior, ainda antes do bloco que executa a aplicação da web, adicione a rota abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">python — app.py<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm"># -------------------------</span>
+<span class="cm"># Rota para excluir a conta do usuário logado.</span>
+@app.route(<span class="st">&quot;/api/perfil&quot;</span>, methods=[<span class="st">&quot;DELETE&quot;</span>])
+@jwt_required()
+<span class="kw">def</span> excluir_perfil():
+
+    <span class="cm"># Captura o ID do usuário a partir do token.</span>
+    usuario_id = get_jwt_identity()
+
+    <span class="cm"># Abre uma conexão com o banco de dados.</span>
+    link = database_connection()
+    cursor = link.cursor(dictionary=<span class="kw">True</span>)
+
+    <span class="cm"># Roda o SQL para excluir o usuário.</span>
+    cursor.execute(<span class="st">&quot;DELETE FROM usuario WHERE id = %s&quot;</span>, (usuario_id,))
+
+    link.commit()
+
+    <span class="cm"># Fecha a conexão com o banco de dados.</span>
+    cursor.close()
+    link.close()
+
+    <span class="kw">return</span> jsonify({<span class="st">&quot;mensagem&quot;</span>: <span class="st">&quot;Conta excluída com sucesso!&quot;</span>}), <span class="num">200</span></pre>
+    </div>
+    <h3>Passo 4 - Compreender as rotas da API local</h3>
+    <ul class="bullets">
+      <li><strong>GET /api/perfil</strong> devolve <code>200</code> com os dados do usuário logado (sem a senha).</li>
+      <li><strong>PUT /api/perfil</strong> recebe os mesmos campos do cadastro e devolve <code>200</code> com uma <code>mensagem</code>, ou <code>409</code> quando o CPF ou o e-mail já pertencem a outro usuário.</li>
+      <li><strong>DELETE /api/perfil</strong> exclui a conta do usuário logado e devolve <code>200</code> com uma <code>mensagem</code>.</li>
+      <li>As três rotas usam <strong>@jwt_required()</strong>, ou seja, só respondem quando a requisição envia um token válido no cabeçalho <code>Authorization</code>. Sem ele, o backend devolve <code>401</code> automaticamente.</li>
+      <li><strong>get_jwt_identity()</strong> descobre de qual usuário é o token, em vez de receber um ID pela URL. Isso impede que um usuário veja, altere ou exclua os dados de outra pessoa apenas trocando um número no endereço.</li>
+    </ul>
+    <div class="callout warn">
+      <strong>Formato da data de nascimento</strong>
+      O MySQL devolve o campo <code>data_nascimento</code> como um objeto de data da linguagem de programação Python, e o <code>jsonify</code> do Flask converte esse tipo de dado para o formato <code>"Sat, 20 May 2000 00:00:00 GMT"</code>. O campo do tipo <code>date</code> do HTML só aceita o formato <code>AAAA-MM-DD</code>, por isso a rota <code>buscar_perfil</code> converte a data com <code>.isoformat()</code> antes de devolver a resposta.
+    </div>
+    <div class="callout note">
+      <strong>Sobre a senha na alteração</strong>
+      A senha só é atualizada quando o campo vem preenchido. Se o usuário deixar o campo de senha em branco, a rota <code>alterar_perfil</code> mantém a senha atual.
+    </div>
+
+  </section>
+
+  <section id="etapa-8">
+
+    <span class="etapa-tag">ETAPA 8 DE 9</span>
+    <h1>HTML para Editar e Excluir Dados do Usuário</h1>
+    <p class="intro">Com as novas rotas prontas, vamos criar a tela de perfil, onde o usuário pode alterar os próprios dados ou excluir a conta, e um botão no dashboard para acessá-la.</p>
+
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Adicione o botão de acesso ao perfil</h3>
+    <p>No arquivo <code>dashboard.html</code>, substitua o bloco de botões criado no passo 4 da etapa 6 pelo bloco abaixo, que adiciona o botão <code>Editar Perfil</code> ao lado do botão <code>Sair</code>:</p>
+    <div class="code-block">
+      <div class="lang-tag">html — dashboard.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>        <span class="cm">&lt;!-- Botões de navegação da sessão --&gt;</span>
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;d-flex justify-content-center gap-2 mb-4&quot;</span>&gt;
+            <span class="kw">&lt;a</span> href=<span class="st">&quot;perfil.html&quot;</span> class=<span class="st">&quot;btn btn-outline-primary btn-sm&quot;</span>&gt;Editar Perfil<span class="kw">&lt;/a</span>&gt;
+            <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-sair&quot;</span> class=<span class="st">&quot;btn btn-outline-danger btn-sm&quot;</span>&gt;Sair<span class="kw">&lt;/button</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;</pre>
+    </div>
+    <h3>Passo 2 - Crie a tela de edição de perfil</h3>
+    <p>Dentro da pasta <code>templates</code>, crie um arquivo chamado de <code>perfil.html</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">html — perfil.html<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>&lt;!DOCTYPE html&gt;
+<span class="kw">&lt;html</span> lang=<span class="st">&quot;pt-BR&quot;</span>&gt;
+<span class="kw">&lt;head</span>&gt;
+    <span class="kw">&lt;meta</span> charset=<span class="st">&quot;UTF-8&quot;</span>&gt;
+    <span class="kw">&lt;meta</span> name=<span class="st">&quot;viewport&quot;</span> content=<span class="st">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;
+    <span class="kw">&lt;title</span>&gt;Editar Perfil - MMI<span class="kw">&lt;/title</span>&gt;
+    <span class="kw">&lt;link</span> href=<span class="st">&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css&quot;</span> rel=<span class="st">&quot;stylesheet&quot;</span>&gt;
+<span class="kw">&lt;/head</span>&gt;
+
+<span class="kw">&lt;body</span> class=<span class="st">&quot;bg-light&quot;</span>&gt;
+    <span class="kw">&lt;div</span> class=<span class="st">&quot;container py-5&quot;</span>&gt;
+
+        <span class="kw">&lt;h1</span> class=<span class="st">&quot;h3 text-center mb-4&quot;</span>&gt;Monitoramento Meteorológico Integrado - MMI<span class="kw">&lt;/h1</span>&gt;
+
+        <span class="kw">&lt;div</span> class=<span class="st">&quot;row justify-content-center&quot;</span>&gt;
+            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-10 col-lg-8&quot;</span>&gt;
+                <span class="kw">&lt;div</span> class=<span class="st">&quot;card shadow&quot;</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-header text-white&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                        <span class="kw">&lt;b</span>&gt;Editar Perfil<span class="kw">&lt;/b</span>&gt;
+                    <span class="kw">&lt;/div</span>&gt;
+                    <span class="kw">&lt;div</span> class=<span class="st">&quot;card-body&quot;</span>&gt;
+
+                        <span class="cm">&lt;!-- Área para mensagens de sucesso ou falha --&gt;</span>
+                        <span class="kw">&lt;div</span> id=<span class="st">&quot;mensagem&quot;</span>&gt;<span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Campos do formulário dispostos em 2 colunas --&gt;</span>
+                        <span class="kw">&lt;div</span> class=<span class="st">&quot;row g-3&quot;</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do nome --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-12&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;nome&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Nome<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;text&quot;</span> id=<span class="st">&quot;nome&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do CPF --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;CPF<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;text&quot;</span> id=<span class="st">&quot;cpf&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo da data de nascimento --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;data-nascimento&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Data de Nascimento<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;date&quot;</span> id=<span class="st">&quot;data-nascimento&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do e-mail --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;email&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;E-mail<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;email&quot;</span> id=<span class="st">&quot;email&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo do telefone --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;telefone&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Telefone<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;tel&quot;</span> id=<span class="st">&quot;telefone&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo da senha --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Senha<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;password&quot;</span> id=<span class="st">&quot;senha&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                            <span class="cm">&lt;!-- Campo de confirmação da senha --&gt;</span>
+                            <span class="kw">&lt;div</span> class=<span class="st">&quot;col-md-6&quot;</span>&gt;
+                                <span class="kw">&lt;label</span> for=<span class="st">&quot;confirmar-senha&quot;</span> class=<span class="st">&quot;form-label&quot;</span>&gt;Confirmar Senha<span class="kw">&lt;/label</span>&gt;
+                                <span class="kw">&lt;input</span> type=<span class="st">&quot;password&quot;</span> id=<span class="st">&quot;confirmar-senha&quot;</span> class=<span class="st">&quot;form-control&quot;</span>&gt;
+                            <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="kw">&lt;/div</span>&gt;
+
+                        <span class="cm">&lt;!-- Botão para salvar as alterações --&gt;</span>
+                        <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-salvar&quot;</span> class=<span class="st">&quot;btn text-white w-100 mt-4&quot;</span> style=<span class="st">&quot;background-color: #E8030B;&quot;</span>&gt;
+                            Salvar Alterações
+                        <span class="kw">&lt;/button</span>&gt;
+
+                        <span class="cm">&lt;!-- Botão para excluir a conta --&gt;</span>
+                        <span class="kw">&lt;button</span> id=<span class="st">&quot;botao-excluir&quot;</span> class=<span class="st">&quot;btn btn-outline-danger w-100 mt-2&quot;</span>&gt;
+                            Excluir Conta
+                        <span class="kw">&lt;/button</span>&gt;
+
+                        <span class="cm">&lt;!-- Link para voltar ao dashboard --&gt;</span>
+                        <span class="kw">&lt;p</span> class=<span class="st">&quot;text-center mt-3 mb-0&quot;</span>&gt;
+                            <span class="kw">&lt;a</span> href=<span class="st">&quot;dashboard.html&quot;</span>&gt;Voltar ao Dashboard<span class="kw">&lt;/a</span>&gt;
+                        <span class="kw">&lt;/p</span>&gt;
+
+                    <span class="kw">&lt;/div</span>&gt;
+                <span class="kw">&lt;/div</span>&gt;
+            <span class="kw">&lt;/div</span>&gt;
+        <span class="kw">&lt;/div</span>&gt;
+    <span class="kw">&lt;/div</span>&gt;
+
+    <span class="cm">&lt;!-- JS com as máscaras dos campos (CPF e telefone) --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/mascaras.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+
+    <span class="cm">&lt;!-- JS que irá consumir o backend --&gt;</span>
+    <span class="kw">&lt;script</span> src=<span class="st">&quot;../static/perfil.js&quot;</span>&gt;<span class="kw">&lt;/script</span>&gt;
+<span class="kw">&lt;/body</span>&gt;
+<span class="kw">&lt;/html</span>&gt;</pre>
+    </div>
+    <h3>Passo 3 - Compreender a tela criada</h3>
+    <ul class="bullets">
+      <li>A tela reaproveita o mesmo layout de card, as mesmas cores e os mesmos campos do <code>cadastro.html</code>, com os mesmos <code>id</code>.</li>
+      <li>O botão <code>Excluir Conta</code> usa a classe <code>btn-outline-danger</code>, que deixa o botão apenas com o contorno vermelho, diferenciando visualmente a ação de excluir da ação principal de salvar.</li>
+      <li>O link de <code>Voltar ao Dashboard</code> substitui o link de login que existia na tela de cadastro.</li>
+    </ul>
+    <h3>Passo 4 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+├── .env
+├── database.py
+├── app.py
+│
+├── static/
+│   ├── cadastro.js
+│   ├── dashboard.js
+│   ├── login.js
+│   └── mascaras.js
+│
+└── templates/
+    ├── cadastro.html
+    ├── dashboard.html
+    ├── index.html
+    └── perfil.html</pre>
+    </div>
+    <h3>Passo 5 - Teste a tela</h3>
+    <p>Execute o <code>app.py</code> no terminal dedicado do VS Code e abra o <code>index.html</code> pelo Live Server, faça login e, no dashboard, clique no botão <code>Editar Perfil</code>.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      A tela de perfil deve abrir com o layout correto, mas com os campos vazios e os botões sem ação, pois o JavaScript dela será criado na próxima etapa.
+    </div>
+
+  </section>
+
+  <section id="etapa-9">
+
+    <span class="etapa-tag">ETAPA 9 DE 9</span>
+    <h1>JavaScript para Editar e Excluir Dados do Usuário</h1>
+    <p class="intro">Na última etapa, vamos criar o JavaScript da tela de perfil, que usa os métodos GET, PUT e DELETE para buscar, alterar e excluir os dados do usuário logado.</p>
+
+    <h2>Passo a Passo</h2>
+    <h3>Passo 1 - Crie o JavaScript do perfil</h3>
+    <p>Dentro da pasta <code>static</code>, crie um arquivo chamado de <code>perfil.js</code> com o conteúdo abaixo:</p>
+    <div class="code-block">
+      <div class="lang-tag">javascript — perfil.js<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre><span class="cm">// Endereço base do backend local.</span>
+<span class="kw">const</span> API = <span class="st">&quot;http://localhost:5000&quot;</span>;
+
+<span class="cm">// Captura o botão de salvar alterações.</span>
+<span class="kw">const</span> botaoSalvar = document.getElementById(<span class="st">&quot;botao-salvar&quot;</span>);
+
+<span class="cm">// Captura o botão de excluir a conta.</span>
+<span class="kw">const</span> botaoExcluir = document.getElementById(<span class="st">&quot;botao-excluir&quot;</span>);
+
+<span class="cm">// Exibe uma mensagem de status na tela (alerta do Bootstrap).</span>
+<span class="kw">function</span> exibirMensagem(texto, tipo) {
+
+    <span class="kw">const</span> mensagem = document.getElementById(<span class="st">&quot;mensagem&quot;</span>);
+
+    mensagem.innerHTML =
+        <span class="st">&#x27;&lt;div class=&quot;alert alert-&#x27;</span> + tipo + <span class="st">&#x27;&quot;&gt;&#x27;</span> + texto + <span class="st">&quot;&lt;/div&gt;&quot;</span>;
+}
+
+<span class="cm">// Busca os dados do perfil do usuário logado e preenche o formulário.</span>
+<span class="kw">async</span> <span class="kw">function</span> carregarPerfil() {
+
+    <span class="cm">// Recupera o token da web (JWT) guardado no login.</span>
+    <span class="kw">const</span> token = localStorage.getItem(<span class="st">&quot;token&quot;</span>);
+
+    <span class="kw">try</span> {
+
+        <span class="cm">// Envia a requisição para buscar os dados do perfil.</span>
+        <span class="kw">const</span> resposta = <span class="kw">await</span> fetch(API + <span class="st">&quot;/api/perfil&quot;</span>, {
+            method: <span class="st">&quot;GET&quot;</span>,
+            headers: { <span class="st">&quot;Authorization&quot;</span>: <span class="st">&quot;Bearer &quot;</span> + token }
+        });
+
+        <span class="cm">// Lê o corpo da resposta em formato JSON.</span>
+        <span class="kw">const</span> dados = <span class="kw">await</span> resposta.json();
+
+        <span class="cm">// Verifica o status da resposta.</span>
+        <span class="kw">if</span> (resposta.ok) {
+
+            <span class="cm">// Preenche os campos do formulário com os dados do usuário.</span>
+            document.getElementById(<span class="st">&quot;nome&quot;</span>).value = dados.nome;
+            document.getElementById(<span class="st">&quot;cpf&quot;</span>).value = dados.cpf;
+            document.getElementById(<span class="st">&quot;email&quot;</span>).value = dados.email;
+            document.getElementById(<span class="st">&quot;telefone&quot;</span>).value = dados.telefone || <span class="st">&quot;&quot;</span>;
+            document.getElementById(<span class="st">&quot;data-nascimento&quot;</span>).value = dados.data_nascimento || <span class="st">&quot;&quot;</span>;
+
+        } <span class="kw">else</span> {
+
+            <span class="cm">// Erro tratado pelo backend.</span>
+            exibirMensagem(dados.erro, <span class="st">&quot;danger&quot;</span>);
+        }
+
+    } <span class="kw">catch</span> (erro) {
+
+        <span class="cm">// Erro de conexão com o backend.</span>
+        exibirMensagem(<span class="st">&quot;Não foi possível conectar ao servidor...&quot;</span>, <span class="st">&quot;danger&quot;</span>);
+    }
+}
+
+<span class="cm">// Envia os dados alterados do formulário para o backend.</span>
+<span class="kw">async</span> <span class="kw">function</span> alterarPerfil() {
+
+    <span class="cm">// Recupera o token da web (JWT) guardado no login.</span>
+    <span class="kw">const</span> token = localStorage.getItem(<span class="st">&quot;token&quot;</span>);
+
+    <span class="cm">// Monta o objeto com os dados digitados.</span>
+    <span class="kw">const</span> usuario = {
+        nome: document.getElementById(<span class="st">&quot;nome&quot;</span>).value,
+        cpf: document.getElementById(<span class="st">&quot;cpf&quot;</span>).value,
+        email: document.getElementById(<span class="st">&quot;email&quot;</span>).value,
+        senha: document.getElementById(<span class="st">&quot;senha&quot;</span>).value || <span class="kw">null</span>,
+        telefone: document.getElementById(<span class="st">&quot;telefone&quot;</span>).value || <span class="kw">null</span>,
+        data_nascimento: document.getElementById(<span class="st">&quot;data-nascimento&quot;</span>).value || <span class="kw">null</span>
+    };
+
+    <span class="cm">// Verifica se os campos obrigatórios foram preenchidos.</span>
+    <span class="kw">if</span> (!usuario.nome || !usuario.cpf || !usuario.email) {
+
+        exibirMensagem(<span class="st">&quot;Preencha todos os campos obrigatórios...&quot;</span>, <span class="st">&quot;warning&quot;</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// Verifica se a senha e a confirmação de senha são iguais.</span>
+    <span class="kw">const</span> confirmarSenha = document.getElementById(<span class="st">&quot;confirmar-senha&quot;</span>).value;
+
+    <span class="kw">if</span> (usuario.senha &amp;&amp; usuario.senha !== confirmarSenha) {
+
+        exibirMensagem(<span class="st">&quot;As senhas não coincidem...&quot;</span>, <span class="st">&quot;warning&quot;</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">try</span> {
+
+        <span class="cm">// Envia a requisição de alteração para o backend.</span>
+        <span class="kw">const</span> resposta = <span class="kw">await</span> fetch(API + <span class="st">&quot;/api/perfil&quot;</span>, {
+            method: <span class="st">&quot;PUT&quot;</span>,
+            headers: {
+                <span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>,
+                <span class="st">&quot;Authorization&quot;</span>: <span class="st">&quot;Bearer &quot;</span> + token
+            },
+            body: JSON.stringify(usuario)
+        });
+
+        <span class="cm">// Lê o corpo da resposta em formato JSON.</span>
+        <span class="kw">const</span> dados = <span class="kw">await</span> resposta.json();
+
+        <span class="cm">// Verifica o status da resposta.</span>
+        <span class="kw">if</span> (resposta.ok) {
+
+            <span class="cm">// Alteração realizada com sucesso.</span>
+            exibirMensagem(dados.mensagem, <span class="st">&quot;success&quot;</span>);
+
+        } <span class="kw">else</span> {
+
+            <span class="cm">// Erro tratado pelo backend.</span>
+            exibirMensagem(dados.erro, <span class="st">&quot;danger&quot;</span>);
+        }
+
+    } <span class="kw">catch</span> (erro) {
+
+        <span class="cm">// Erro de conexão com o backend.</span>
+        exibirMensagem(<span class="st">&quot;Não foi possível conectar ao servidor...&quot;</span>, <span class="st">&quot;danger&quot;</span>);
+    }
+}
+
+<span class="cm">// Exclui a conta do usuário logado.</span>
+<span class="kw">async</span> <span class="kw">function</span> excluirPerfil() {
+
+    <span class="cm">// Solicita a confirmação do usuário antes de excluir.</span>
+    <span class="kw">if</span> (!confirm(<span class="st">&quot;Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.&quot;</span>)) {
+
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// Recupera o token da web (JWT) guardado no login.</span>
+    <span class="kw">const</span> token = localStorage.getItem(<span class="st">&quot;token&quot;</span>);
+
+    <span class="kw">try</span> {
+
+        <span class="cm">// Envia a requisição de exclusão para o backend.</span>
+        <span class="kw">const</span> resposta = <span class="kw">await</span> fetch(API + <span class="st">&quot;/api/perfil&quot;</span>, {
+            method: <span class="st">&quot;DELETE&quot;</span>,
+            headers: { <span class="st">&quot;Authorization&quot;</span>: <span class="st">&quot;Bearer &quot;</span> + token }
+        });
+
+        <span class="cm">// Lê o corpo da resposta em formato JSON.</span>
+        <span class="kw">const</span> dados = <span class="kw">await</span> resposta.json();
+
+        <span class="cm">// Verifica o status da resposta.</span>
+        <span class="kw">if</span> (resposta.ok) {
+
+            <span class="cm">// Remove os dados da sessão, pois a conta não existe mais.</span>
+            localStorage.removeItem(<span class="st">&quot;token&quot;</span>);
+            localStorage.removeItem(<span class="st">&quot;nome&quot;</span>);
+
+            <span class="cm">// Exclusão realizada com sucesso.</span>
+            exibirMensagem(dados.mensagem, <span class="st">&quot;success&quot;</span>);
+
+            <span class="cm">// Redireciona para o login após 2 segundos.</span>
+            setTimeout(<span class="kw">function</span> () {
+                window.location.href = <span class="st">&quot;index.html&quot;</span>;
+            }, <span class="num">2000</span>);
+
+        } <span class="kw">else</span> {
+
+            <span class="cm">// Erro tratado pelo backend.</span>
+            exibirMensagem(dados.erro, <span class="st">&quot;danger&quot;</span>);
+        }
+
+    } <span class="kw">catch</span> (erro) {
+
+        <span class="cm">// Erro de conexão com o backend.</span>
+        exibirMensagem(<span class="st">&quot;Não foi possível conectar ao servidor...&quot;</span>, <span class="st">&quot;danger&quot;</span>);
+    }
+}
+
+<span class="cm">// Busca os dados do perfil assim que o HTML carrega.</span>
+carregarPerfil();
+
+<span class="cm">// Dispara a alteração ao clicar no botão.</span>
+botaoSalvar.addEventListener(<span class="st">&quot;click&quot;</span>, alterarPerfil);
+
+<span class="cm">// Dispara a exclusão ao clicar no botão.</span>
+botaoExcluir.addEventListener(<span class="st">&quot;click&quot;</span>, excluirPerfil);</pre>
+    </div>
+    <h3>Passo 2 - Compreender o JavaScript do perfil</h3>
+    <ul class="bullets">
+      <li><strong>carregarPerfil()</strong> é executada assim que a página abre e faz um GET para preencher o formulário com os dados atuais do usuário.</li>
+      <li><strong>alterarPerfil()</strong> é disparada ao clicar no botão <code>Salvar Alterações</code> e faz um PUT com os dados do formulário. Se o campo de senha estiver vazio, ele é enviado como <code>null</code> e a senha atual é mantida.</li>
+      <li><strong>excluirPerfil()</strong> é disparada ao clicar no botão <code>Excluir Conta</code>. Ela pede uma confirmação com <code>confirm()</code>, faz um DELETE e, como a conta deixou de existir, apaga o token do <code>localStorage</code> antes de voltar para a tela de login.</li>
+      <li>As três funções enviam o token no cabeçalho <code>Authorization: Bearer &lt;token&gt;</code>, que é o formato exigido pelo Flask-JWT-Extended nas rotas protegidas.</li>
+    </ul>
+    <h3>Passo 3 - Estrutura atual de pastas do projeto</h3>
+    <p>Até este ponto, sua pasta de projeto deve estar organizada assim:</p>
+    <div class="code-block">
+      <div class="lang-tag">estrutura de pastas<button class="copy-btn" onclick="copiar(this)">Copiar</button></div>
+      <pre>Monitoramento Meteorológico Integrado/
+│
+├── schema.sql
+├── .env
+├── database.py
+├── app.py
+│
+├── static/
+│   ├── cadastro.js
+│   ├── dashboard.js
+│   ├── login.js
+│   ├── mascaras.js
+│   └── perfil.js
+│
+└── templates/
+    ├── cadastro.html
+    ├── dashboard.html
+    ├── index.html
+    └── perfil.html</pre>
+    </div>
+    <h3>Passo 4 - Teste o fluxo completo</h3>
+    <p>Execute o <code>app.py</code> no terminal dedicado do VS Code e abra o <code>index.html</code> pelo Live Server. Faça login, clique no botão <code>Editar Perfil</code> e verifique se todos os campos aparecem preenchidos, incluindo a data de nascimento. Altere algum dado, clique no botão <code>Salvar Alterações</code> e recarregue a página para confirmar que a alteração foi gravada no banco de dados. Por fim, clique no botão <code>Excluir Conta</code> e confirme a exclusão.</p>
+    <div class="callout tip">
+      <strong>Esperado nesta etapa</strong>
+      A alteração deve continuar aparecendo depois de recarregar a página. Tentar salvar um CPF ou um e-mail que já pertencem a outro usuário deve exibir a mensagem de conflito. Após a exclusão da conta, o usuário deve ser levado para a tela de login, e tentar entrar novamente com o mesmo CPF deve exibir a mensagem de CPF ou senha inválidos.
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function copiar(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(function () {
+    btn.textContent = 'Copiado!';
+    btn.classList.add('copied');
+    setTimeout(function () {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Atualiza a barra de progresso conforme o scroll da pagina.
+function atualizarProgresso() {
+  const alturaTotal = document.documentElement.scrollHeight - window.innerHeight;
+  const progresso = alturaTotal > 0 ? (window.scrollY / alturaTotal) * 100 : 0;
+  document.getElementById('progress-fill').style.width = progresso + '%';
+}
+window.addEventListener('scroll', atualizarProgresso);
+window.addEventListener('resize', atualizarProgresso);
+atualizarProgresso();
+
+// Marca o link da sidebar correspondente a secao visivel.
+const links = document.querySelectorAll('.sidebar a');
+const secoes = document.querySelectorAll('main > section');
+const observer = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    if (entry.isIntersecting) {
+      links.forEach(function (a) { a.classList.remove('active'); });
+      const ativo = document.querySelector('.sidebar a[href="#' + entry.target.id + '"]');
+      if (ativo) ativo.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+secoes.forEach(function (s) { observer.observe(s); });
+</script>
+
+</body>
+</html>
